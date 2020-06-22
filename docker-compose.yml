@@ -1,0 +1,55 @@
+version: "3.7"
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: web.Dockerfile
+    environment:
+      - DB_HOST=mysql
+      - DB_USER=root
+      - DB_PASS=pass
+      - DB_NAME=app
+      - REDIS_HOST=redis
+    ports:
+      - 8000:80
+    depends_on:
+      - mysql
+      - redis
+    networks:
+      - mynet
+  worker:
+    build:
+      context: .
+      dockerfile: worker.Dockerfile
+    environment:
+      - DB_HOST=mysql
+      - DB_USER=root
+      - DB_PASS=pass
+      - DB_NAME=app
+      - REDIS_HOST=redis
+    depends_on:
+      - mysql
+      - redis
+    networks:
+      - mynet
+  mysql:
+    image: mysql:5.5.61
+    environment:
+      - MYSQL_ROOT_PASSWORD=pass
+      - MYSQL_DATABASE=app
+    volumes:
+      - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    expose:
+      - 3306
+    ports:
+      - 3306:3306
+    restart: on-failure
+    networks:
+      - mynet
+  redis:
+    image: redis:latest
+    networks:
+      - mynet
+networks:
+  mynet:
